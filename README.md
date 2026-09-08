@@ -1,4 +1,4 @@
-﻿# CareMate — AI-Powered Elderly Care Companion Robot
+# CareMate — AI-Powered Elderly Care Companion Robot
 
 <p align="center">
   <img src="assets/images/caremate-robot.jpg" alt="CareMate Robot" width="850">
@@ -18,10 +18,6 @@
   <img src="https://img.shields.io/badge/Telegram-Alerts-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram">
 </p>
 
-<p align="center">
-  <strong>Group 15 Â· MES Kuttippuram Â· Guided by Mr. Abin C Jose</strong>
-</p>
-
 ---
 
 ## Table of Contents
@@ -38,7 +34,7 @@
 - [Telegram Alert Workflow](#telegram-alert-workflow)
 - [Hardware](#hardware)
 - [Hardware Architecture](#hardware-architecture)
-- [Pi â†” Arduino Communication](#pi--arduino-communication)
+- [Pi ↔ Arduino Communication](#pi--arduino-communication)
 - [Safety Mechanisms](#safety-mechanisms)
 - [Technology Stack](#technology-stack)
 - [Repository Structure](#repository-structure)
@@ -67,16 +63,16 @@ The project is designed around a simple principle:
 
 CareMate brings together:
 
-- ðŸ‘ï¸ Vision-based person detection
-- ðŸš¶ Person following and movement control
-- âš ï¸ Vision-based fall detection
-- â¤ï¸ Heart-rate monitoring
-- ðŸŒ¡ï¸ Temperature monitoring
-- ðŸŽ™ï¸ Malayalam and English voice interaction
-- ðŸ–¥ï¸ Web-based caregiver dashboard
-- ðŸ“± Telegram notifications with image evidence
-- ðŸ¤– Raspberry Pi + Arduino hybrid control
-- ðŸ›‘ Hardware-level motor safety through heartbeat monitoring
+- 👁️ Vision-based person detection
+- 🚶 Person following and movement control
+- ⚠️ Vision-based fall detection
+- ❤️ Heart-rate monitoring
+- 🌡️ Temperature monitoring
+- 🎙️ Malayalam and English voice interaction
+- 🖥️ Web-based caregiver dashboard
+- 📱 Telegram notifications with image evidence
+- 🤖 Raspberry Pi + Arduino hybrid control
+- 🛑 Hardware-level motor safety through heartbeat monitoring
 
 The system uses a **Raspberry Pi 5** as the high-level computing platform and an **Arduino UNO** for sensor interfacing and motor control.
 
@@ -106,46 +102,46 @@ CareMate explores a more integrated approach by combining **mobility, computer v
 At a high level, CareMate follows this workflow:
 
 ```text
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚       USER           â”‚
-                    â”‚  Elderly Individual  â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                               â”‚
-              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-              â”‚                â”‚                â”‚
-              â–¼                â–¼                â–¼
+                    ┌──────────────────────┐
+                    │       USER           │
+                    │  Elderly Individual  │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
            Camera           Sensors           Voice
-              â”‚                â”‚                â”‚
-              â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                               â–¼
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚    RASPBERRY PI 5    â”‚
-                    â”‚                      â”‚
-                    â”‚ Vision + AI          â”‚
-                    â”‚ Voice Processing      â”‚
-                    â”‚ System Coordination  â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                               â”‚
+              │                │                │
+              └────────────────┼────────────────┘
+                               ▼
+                    ┌──────────────────────┐
+                    │    RASPBERRY PI 5    │
+                    │                      │
+                    │ Vision + AI          │
+                    │ Voice Processing      │
+                    │ System Coordination  │
+                    └──────────┬───────────┘
+                               │
                          USB / Serial
-                               â”‚
-                               â–¼
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚     ARDUINO UNO      â”‚
-                    â”‚                      â”‚
-                    â”‚ Sensor Interface     â”‚
-                    â”‚ Motor Control        â”‚
-                    â”‚ Safety Heartbeat     â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-                            â”‚       â”‚
-                            â–¼       â–¼
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │     ARDUINO UNO      │
+                    │                      │
+                    │ Sensor Interface     │
+                    │ Motor Control        │
+                    │ Safety Heartbeat     │
+                    └───────┬───────┬──────┘
+                            │       │
+                            ▼       ▼
                          Sensors  Motors
-                            â”‚
-                            â–¼
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚   CAREGIVER LAYER    â”‚
-                    â”‚                      â”‚
-                    â”‚ Dashboard + Telegram â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                            │
+                            ▼
+                    ┌──────────────────────┐
+                    │   CAREGIVER LAYER    │
+                    │                      │
+                    │ Dashboard + Telegram │
+                    └──────────────────────┘
 ```
 
 ---
@@ -255,28 +251,28 @@ The implementation:
 
 ```text
 Camera Frame
-     â”‚
-     â–¼
+     │
+     ▼
 YOLOv8n Person Detection
-     â”‚
-     â–¼
+     │
+     ▼
 Target Bounding Box
-     â”‚
-     â–¼
+     │
+     ▼
 Position / Distance Estimation
-     â”‚
-     â–¼
+     │
+     ▼
 Movement Decision
-     â”‚
- â”Œâ”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
- â–¼   â–¼               â–¼
+     │
+ ┌───┼───────────────┐
+ ▼   ▼               ▼
 LEFT FORWARD       RIGHT
-     â”‚
-     â–¼
+     │
+     ▼
    STOP
-     â”‚
-     â–¼
-Arduino â†’ L298N â†’ Motors
+     │
+     ▼
+Arduino → L298N → Motors
 ```
 
 ### Movement Commands
@@ -315,30 +311,30 @@ A potential fall is not immediately treated as a confirmed emergency.
 
 ```text
 Camera Frame
-     â”‚
-     â–¼
+     │
+     ▼
 YOLOv8n-Pose
-     â”‚
-     â–¼
+     │
+     ▼
 Person + Pose Keypoints
-     â”‚
-     â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-     â–¼               â–¼
+     │
+     ├───────────────┐
+     ▼               ▼
 Bounding Box     Keypoint Analysis
 Aspect Ratio     Head / Hip Position
-     â”‚               â”‚
-     â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜
-             â–¼
+     │               │
+     └───────┬───────┘
+             ▼
        Fall Candidate
-             â”‚
-             â–¼
+             │
+             ▼
    Consecutive Frame Check
-             â”‚
-             â–¼
+             │
+             ▼
       FALL CONFIRMED
-             â”‚
-      â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”
-      â–¼             â–¼
+             │
+      ┌──────┴──────┐
+      ▼             ▼
    Snapshot      Telegram Alert
 ```
 
@@ -403,23 +399,23 @@ CareMate includes a voice assistant designed for **English and Malayalam** inter
 
 ```text
 Microphone
-    â”‚
-    â–¼
+    │
+    ▼
 Speech Recognition
-    â”‚
-    â–¼
+    │
+    ▼
 English / Malayalam Text
-    â”‚
-    â–¼
+    │
+    ▼
 Command / LLM Processing
-    â”‚
-    â–¼
+    │
+    ▼
 Response Text
-    â”‚
-    â–¼
+    │
+    ▼
 gTTS
-    â”‚
-    â–¼
+    │
+    ▼
 Audio Playback
 ```
 
@@ -447,15 +443,15 @@ CareMate provides a Flask-based web dashboard for centralized monitoring.
 
 The dashboard includes:
 
-- â¤ï¸ Heart-rate information
-- ðŸŒ¡ï¸ Temperature information
-- ðŸš¨ Fall status
-- ðŸ“¹ Live camera feed
-- ðŸ¤– Manual robot controls
-- ðŸš¶ Person-following control
-- ðŸ“‹ Activity log
-- ðŸ“¡ System status
-- ðŸ”” Alert information
+- ❤️ Heart-rate information
+- 🌡️ Temperature information
+- 🚨 Fall status
+- 📹 Live camera feed
+- 🤖 Manual robot controls
+- 🚶 Person-following control
+- 📋 Activity log
+- 📡 System status
+- 🔔 Alert information
 
 The dashboard is accessible over the local network:
 
@@ -482,27 +478,27 @@ A confirmed fall can trigger:
 
 ```text
 Potential Fall
-      â”‚
-      â–¼
+      │
+      ▼
 Fall Confirmation Logic
-      â”‚
-      â–¼
+      │
+      ▼
 Snapshot Captured
-      â”‚
-      â–¼
+      │
+      ▼
 Telegram Photo Alert
-      â”‚
-      â–¼
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚   CAREGIVER RECEIVES  â”‚
-â”‚       ALERT           â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-            â”‚
-       â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”
-       â–¼          â–¼
+      │
+      ▼
+┌───────────────────────┐
+│   CAREGIVER RECEIVES  │
+│       ALERT           │
+└───────────┬───────────┘
+            │
+       ┌────┴─────┐
+       ▼          ▼
    CONFIRM      FALSE ALARM
-       â”‚          â”‚
-       â–¼          â–¼
+       │          │
+       ▼          ▼
 Emergency      Dismiss
 Response       Alert
 ```
@@ -523,18 +519,18 @@ CareMate is designed so that AI detection assists rather than blindly replaces h
 
 ```text
 AI Detection
-     â”‚
-     â–¼
+     │
+     ▼
 Potential Fall
-     â”‚
-     â–¼
+     │
+     ▼
 Caregiver Notification
-     â”‚
-     â–¼
+     │
+     ▼
 Human Confirmation
-     â”‚
- â”Œâ”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
- â–¼               â–¼
+     │
+ ┌───┴───────────┐
+ ▼               ▼
 Emergency      False Alarm
 Response       / Dismiss
 ```
@@ -555,7 +551,7 @@ The physical CareMate prototype uses a mobile four-wheel robotic platform.
 | Arduino UNO | Sensor and motor interfacing |
 | L298N Motor Driver | DC motor control |
 | USB Webcam | Vision input |
-| 4 Ã— DC Geared Motors | Robot movement |
+| 4 × DC Geared Motors | Robot movement |
 | DHT11 | Temperature sensing |
 | Pulse Sensor | Heart-rate sensing |
 | 12V Battery | Motor power |
@@ -586,36 +582,36 @@ The robot follows a split architecture:
 
 ```text
                     USB CAMERA
-                        â”‚
-                        â–¼
-                 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                 â”‚ Raspberry Piâ”‚
-                 â”‚      5      â”‚
-                 â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-                        â”‚
+                        │
+                        ▼
+                 ┌─────────────┐
+                 │ Raspberry Pi│
+                 │      5      │
+                 └──────┬──────┘
+                        │
                    USB / Serial
-                        â”‚
-                        â–¼
-                 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                 â”‚ Arduino UNO â”‚
-                 â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-                        â”‚
-              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-              â–¼                   â–¼
+                        │
+                        ▼
+                 ┌─────────────┐
+                 │ Arduino UNO │
+                 └──────┬──────┘
+                        │
+              ┌─────────┴─────────┐
+              ▼                   ▼
         Health Sensors       L298N Driver
-              â”‚                   â”‚
-              â”‚             â”Œâ”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”
-              â”‚             â–¼           â–¼
-              â”‚         Left Motors  Right Motors
-              â”‚
-              â””â”€â”€â”€â”€â”€â”€â–º Sensor Data
+              │                   │
+              │             ┌─────┴─────┐
+              │             ▼           ▼
+              │         Left Motors  Right Motors
+              │
+              └──────► Sensor Data
 ```
 
 ---
 
 # Hardware Wiring
 
-## L298N â†’ Arduino UNO
+## L298N → Arduino UNO
 
 | L298N | Arduino | Purpose |
 |---|---|---|
@@ -626,7 +622,7 @@ The robot follows a split architecture:
 | IN3 | D9 | Right motor direction |
 | IN4 | D10 | Right motor direction |
 
-## DHT11 â†’ Arduino UNO
+## DHT11 → Arduino UNO
 
 | DHT11 | Arduino |
 |---|---|
@@ -634,7 +630,7 @@ The robot follows a split architecture:
 | GND | GND |
 | DATA | D2 |
 
-## Pulse Sensor â†’ Arduino UNO
+## Pulse Sensor → Arduino UNO
 
 | Pulse Sensor | Arduino |
 |---|---|
@@ -642,7 +638,7 @@ The robot follows a split architecture:
 | GND | GND |
 | Signal | A0 |
 
-## Raspberry Pi â†’ Arduino
+## Raspberry Pi → Arduino
 
 The Raspberry Pi communicates with the Arduino through USB serial.
 
@@ -655,11 +651,11 @@ Default configuration:
 
 ---
 
-# Pi â†” Arduino Communication
+# Pi ↔ Arduino Communication
 
 CareMate uses a simple serial protocol between the Raspberry Pi and Arduino.
 
-## Raspberry Pi â†’ Arduino
+## Raspberry Pi → Arduino
 
 | Data | Meaning |
 |---|---|
@@ -670,7 +666,7 @@ CareMate uses a simple serial protocol between the Raspberry Pi and Arduino.
 | `S` | Stop |
 | `K` | Heartbeat acknowledgement |
 
-## Arduino â†’ Raspberry Pi
+## Arduino → Raspberry Pi
 
 | Data | Meaning |
 |---|---|
@@ -693,17 +689,17 @@ The Arduino expects periodic heartbeat acknowledgements from the Raspberry Pi.
 
 ```text
 Raspberry Pi
-     â”‚
-     â”‚ K
-     â”‚
-     â–¼
+     │
+     │ K
+     │
+     ▼
 Arduino
-     â”‚
-     â”‚ heartbeat timeout
-     â–¼
+     │
+     │ heartbeat timeout
+     ▼
 No acknowledgement for 3 seconds
-     â”‚
-     â–¼
+     │
+     ▼
 STOP ALL MOTORS
 ```
 
@@ -762,70 +758,70 @@ This provides a hardware-level fail-safe against loss of Raspberry Pi communicat
 
 ```text
 CAREMATE/
-â”‚
-â”œâ”€â”€ README.md
-â”œâ”€â”€ .gitignore
-â”œâ”€â”€ .env.example
-â”œâ”€â”€ config.py
-â”œâ”€â”€ requirements.txt
-â”‚
-â”œâ”€â”€ arduino_main/
-â”‚   â””â”€â”€ caremate_arduino.ino
-â”‚
-â”œâ”€â”€ assets/
-â”‚   â”œâ”€â”€ dashboard/
-â”‚   â”œâ”€â”€ demo/
-â”‚   â”‚   â”œâ”€â”€ caremate-demo.mp4
-â”‚   â”‚   â””â”€â”€ fall-detection-demo.mp4
-â”‚   â”œâ”€â”€ hardware/
-â”‚   â”œâ”€â”€ hero/
-â”‚   â”œâ”€â”€ images/
-â”‚   â”‚   â”œâ”€â”€ caremate-robot.jpg
-â”‚   â”‚   â”œâ”€â”€ dashboard.jpg
-â”‚   â”‚   â”œâ”€â”€ fall-detection-alert.jpg
-â”‚   â”‚   â”œâ”€â”€ fall-detection.jpg
-â”‚   â”‚   â”œâ”€â”€ hardware-architecture.jpg
-â”‚   â”‚   â”œâ”€â”€ person-following.jpg
-â”‚   â”‚   â”œâ”€â”€ system-architecture.jpg
-â”‚   â”‚   â”œâ”€â”€ telegram-alert.jpg
-â”‚   â”‚   â”œâ”€â”€ telegram-notification.jpg
-â”‚   â”‚   â””â”€â”€ voice-assistant.jpg
-â”‚   â””â”€â”€ vision/
-â”‚
-â”œâ”€â”€ docs/
-â”‚
-â”œâ”€â”€ full_system/
-â”‚   â”œâ”€â”€ main.py
-â”‚   â”œâ”€â”€ shared_state.py
-â”‚   â””â”€â”€ README.md
-â”‚
-â”œâ”€â”€ models/
-â”‚
-â”œâ”€â”€ module_01_person_following/
-â”‚   â”œâ”€â”€ person_following.py
-â”‚   â”œâ”€â”€ test_motors.py
-â”‚   â””â”€â”€ README.md
-â”‚
-â”œâ”€â”€ module_02_fall_detection/
-â”‚   â”œâ”€â”€ fall_detection.py
-â”‚   â””â”€â”€ README.md
-â”‚
-â”œâ”€â”€ module_03_health_monitoring/
-â”‚   â”œâ”€â”€ health_monitor.py
-â”‚   â”œâ”€â”€ arduino_health/
-â”‚   â”‚   â””â”€â”€ arduino_health.ino
-â”‚   â””â”€â”€ README.md
-â”‚
-â”œâ”€â”€ module_04_voice_assistant/
-â”‚   â”œâ”€â”€ voice_assistant.py
-â”‚   â””â”€â”€ README.md
-â”‚
-â””â”€â”€ module_05_dashboard_alerts/
-    â”œâ”€â”€ app.py
-    â”œâ”€â”€ telegram_bot.py
-    â”œâ”€â”€ templates/
-    â”‚   â””â”€â”€ index.html
-    â””â”€â”€ README.md
+│
+├── README.md
+├── .gitignore
+├── .env.example
+├── config.py
+├── requirements.txt
+│
+├── arduino_main/
+│   └── caremate_arduino.ino
+│
+├── assets/
+│   ├── dashboard/
+│   ├── demo/
+│   │   ├── caremate-demo.mp4
+│   │   └── fall-detection-demo.mp4
+│   ├── hardware/
+│   ├── hero/
+│   ├── images/
+│   │   ├── caremate-robot.jpg
+│   │   ├── dashboard.jpg
+│   │   ├── fall-detection-alert.jpg
+│   │   ├── fall-detection.jpg
+│   │   ├── hardware-architecture.jpg
+│   │   ├── person-following.jpg
+│   │   ├── system-architecture.jpg
+│   │   ├── telegram-alert.jpg
+│   │   ├── telegram-notification.jpg
+│   │   └── voice-assistant.jpg
+│   └── vision/
+│
+├── docs/
+│
+├── full_system/
+│   ├── main.py
+│   ├── shared_state.py
+│   └── README.md
+│
+├── models/
+│
+├── module_01_person_following/
+│   ├── person_following.py
+│   ├── test_motors.py
+│   └── README.md
+│
+├── module_02_fall_detection/
+│   ├── fall_detection.py
+│   └── README.md
+│
+├── module_03_health_monitoring/
+│   ├── health_monitor.py
+│   ├── arduino_health/
+│   │   └── arduino_health.ino
+│   └── README.md
+│
+├── module_04_voice_assistant/
+│   ├── voice_assistant.py
+│   └── README.md
+│
+└── module_05_dashboard_alerts/
+    ├── app.py
+    ├── telegram_bot.py
+    ├── templates/
+    │   └── index.html
+    └── README.md
 ```
 
 ---
@@ -880,11 +876,11 @@ CAREMATE/
 
 ## CareMate Robot Demonstration
 
-[â–¶ Open CareMate Demo](assets/demo/caremate-demo.mp4)
+[▶ Open CareMate Demo](assets/demo/caremate-demo.mp4)
 
 ## Fall Detection Demonstration
 
-[â–¶ Open Fall Detection Demo](assets/demo/fall-detection-demo.mp4)
+[▶ Open Fall Detection Demo](assets/demo/fall-detection-demo.mp4)
 
 > GitHub's handling of large MP4 files can vary. The repository keeps the original demonstration files under `assets/demo/`; if GitHub does not render an inline preview, open the file using the links above.
 
@@ -1136,8 +1132,8 @@ Testing and project review observations showed:
 
 - Real-time fall detection using pose estimation
 - Reliable person detection and tracking under suitable lighting conditions
-- Telegram alert delivery in approximately 1â€“2 seconds during testing
-- Voice assistant responses in approximately 1â€“2 seconds during testing
+- Telegram alert delivery in approximately 1–2 seconds during testing
+- Voice assistant responses in approximately 1–2 seconds during testing
 - Raspberry Pi edge processing suitable for the implemented lightweight models
 
 Performance is environment-dependent and should not be interpreted as a medical or production-grade benchmark.
@@ -1233,22 +1229,22 @@ CareMate is not intended to be just a mobile robot.
 The broader design goal is to combine:
 
 ```text
-        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-        â”‚    SAFETY    â”‚
-        â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜
-               â”‚
-        â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”
-        â”‚   CAREMATE   â”‚
-        â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜
-               â”‚
-      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”
-      â”‚        â”‚        â”‚
-      â–¼        â–¼        â–¼
+        ┌──────────────┐
+        │    SAFETY    │
+        └──────┬───────┘
+               │
+        ┌──────▼───────┐
+        │   CAREMATE   │
+        └──────┬───────┘
+               │
+      ┌────────┼────────┐
+      │        │        │
+      ▼        ▼        ▼
    HEALTH  ASSISTANCE  AI
-      â”‚        â”‚        â”‚
-      â””â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-               â”‚
-               â–¼
+      │        │        │
+      └────────┼────────┘
+               │
+               ▼
           CAREGIVER
 ```
 
@@ -1289,6 +1285,5 @@ The project makes use of open-source software, machine-learning frameworks, embe
 
 <p align="center">
   <strong>CAREMATE</strong><br>
-  AI Â· Robotics Â· Computer Vision Â· Embedded Systems Â· Elderly Care
+  AI · Robotics · Computer Vision · Embedded Systems · Elderly Care
 </p>
-
