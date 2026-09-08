@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareMate Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f1117; color: #e0e0e0; }
+
+  /* Header */
+  .header {
+    background: #1a1d2e; padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #2d3150;
+  }
+  .logo { font-size: 1.4rem; font-weight: bold; color: #60a5fa; }
+  .logo span { color: #a78bfa; }
+  .status-badge {
+    background: #10b981; color: white; padding: 4px 12px;
+    border-radius: 20px; font-size: 0.8rem; font-weight: bold;
+  }
+  .status-badge.inactive { background: #ef4444; }
+
+  /* Layout */
+  .container { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 16px; height: calc(100vh - 60px); }
+
+  /* Camera Panel */
+  .camera-panel { background: #1a1d2e; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; }
+  .panel-title { font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .camera-feed { flex: 1; background: #0f1117; border-radius: 8px; overflow: hidden; position: relative; }
+  .camera-feed img { width: 100%; height: 100%; object-fit: cover; }
+  .camera-overlay {
+    position: absolute; top: 8px; left: 8px;
+    display: flex; gap: 8px;
+  }
+  .badge {
+    background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px;
+    font-size: 0.75rem; display: flex; align-items: center; gap: 4px;
+  }
+  .badge.active { color: #10b981; }
+  .badge.warning { color: #f59e0b; }
+  .badge.danger  { color: #ef4444; }
+  .rec-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+  /* Right sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+  /* Cards */
+  .card { background: #1a1d2e; border-radius: 12px; padding: 16px; }
+  .card-title { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+  /* Vitals */
+  .vitals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .vital-item { background: #0f1117; border-radius: 8px; padding: 12px; text-align: center; }
+  .vital-icon { font-size: 1.4rem; }
+  .vital-label { font-size: 0.7rem; color: #64748b; margin: 2px 0; }
+  .vital-value { font-size: 1.3rem; font-weight: bold; color: #60a5fa; }
+  .vital-value.alert { color: #ef4444; }
+  .vital-unit  { font-size: 0.7rem; color: #64748b; }
+  .fall-status { text-align: center; padding: 8px; border-radius: 8px; background: #0f1117; }
+  .fall-status.normal  { color: #10b981; }
+  .fall-status.danger  { color: #ef4444; background: #1f1515; }
+
+  /* Robot Control */
+  .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .btn {
+    padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+  }
+  .btn:hover { transform: scale(1.03); }
+  .btn-primary  { background: #3b82f6; color: white; }
+  .btn-danger   { background: #ef4444; color: white; }
+  .btn-success  { background: #10b981; color: white; }
+  .btn-warning  { background: #f59e0b; color: white; }
+  .btn-secondary{ background: #374151; color: #e0e0e0; }
+  .btn-full     { grid-column: 1 / -1; }
+
+  /* Direction pad */
+  .dpad { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 4px; margin-top: 8px; }
+  .dpad-btn { padding: 10px; border: none; background: #374151; color: white; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+  .dpad-btn:hover { background: #4b5563; }
+  .dpad-btn.stop { background: #7f1d1d; }
+  .dpad-placeholder { background: transparent; }
+
+  /* Activity Log */
+  .activity-list { max-height: 180px; overflow-y: auto; }
+  .activity-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #1e2030; font-size: 0.8rem; }
+  .activity-time { color: #60a5fa; white-space: nowrap; }
+  .activity-msg  { color: #94a3b8; }
+
+  /* Footer info */
+  .footer-info { display: flex; gap: 12px; padding: 8px 16px; background: #1a1d2e; font-size: 0.75rem; color: #64748b; }
+  .footer-info span { display: flex; align-items: center; gap: 4px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+
+  /* Alert popup */
+  .alert-popup {
+    position: fixed; bottom: 20px; right: 20px;
+    background: #7f1d1d; border: 1px solid #ef4444; border-radius: 12px;
+    padding: 16px; max-width: 280px; z-index: 1000;
+    display: none;
+  }
+  .alert-popup.show { display: block; }
+  .alert-popup h4 { color: #ef4444; margin-bottom: 6px; }
+  .alert-popup p  { color: #e0e0e0; font-size: 0.85rem; margin-bottom: 10px; }
+  .alert-popup-btns { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">Care<span>Mate</span> <small style="font-size:0.7rem;color:#64748b;">AI-Powered Elderly Care Companion</small></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="systemBadge" class="status-badge">● System Active</span>
+    <span style="font-size:0.8rem;color:#64748b;" id="clock"></span>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="container">
+
+  <!-- Camera + footer -->
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="camera-panel" style="flex:1;">
+      <div class="panel-title">Live Camera Feed – Raspberry Pi Camera Module</div>
+      <div class="camera-feed">
+        <img src="/video_feed" alt="Live Feed" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22640%22 height=%22480%22><rect fill=%22%230f1117%22 width=%22640%22 height=%22480%22/><text x=%22320%22 y=%22240%22 text-anchor=%22middle%22 fill=%22%2364748b%22 font-size=%2220%22>No Camera Signal</text></svg>'">
+        <div class="camera-overlay">
+          <div class="badge"><div class="rec-dot"></div> REC</div>
+          <div class="badge active" id="faceDetectedBadge">👤 Face Detected ✓</div>
+          <div class="badge active" id="poseTrackingBadge">🦴 Pose Tracking ✓</div>
+          <div class="badge warning" id="fallStatusBadge">⚠ Fall Detected</div>
+        </div>
+      </div>
+    </div>
+    <!-- Timestamp -->
+    <div style="color:#64748b;font-size:0.75rem;padding:4px 8px;" id="timestamp"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Vitals Card -->
+    <div class="card">
+      <div class="card-title">Health Vitals</div>
+      <div class="vitals-grid">
+        <div class="vital-item">
+          <div class="vital-icon">❤️</div>
+          <div class="vital-label">Heart Rate</div>
+          <div class="vital-value" id="hrValue">--</div>
+          <div class="vital-unit">BPM</div>
+        </div>
+        <div class="vital-item">
+          <div class="vital-icon">🌡️</div>
+          <div class="vital-label">Body Temp</div>
+          <div class="vital-value" id="tempValue">--</div>
+          <div class="vital-unit">°C</div>
+        </div>
+        <div class="vital-item">
+          <div class="vital-icon">⚠️</div>
+          <div class="vital-label">Fall Status</div>
+          <div id="fallStatusText" class="vital-value" style="font-size:0.9rem;">Normal</div>
+          <div class="vital-unit">status</div>
+        </div>
+        <div class="vital-item">
+          <div class="vital-icon">😐</div>
+          <div class="vital-label">Emotion</div>
+          <div class="vital-value" style="font-size:0.9rem;color:#94a3b8;">Disabled</div>
+          <div class="vital-unit">module</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="btn btn-warning" onclick="simulateFall()" style="width:100%;font-size:0.75rem;">
+          Simulate Fall Detection (Demo)
+        </button>
+      </div>
+    </div>
+
+    <!-- Robot Control Card -->
+    <div class="card">
+      <div class="card-title">Robot Control</div>
+      <div class="control-grid">
+        <button class="btn btn-success" onclick="startTracking()">▶ Start Tracking</button>
+        <button class="btn btn-danger"  onclick="stopTracking()">■ Stop Tracking</button>
+        <button class="btn btn-secondary btn-full" id="voiceBtn">🎤 Voice Command (ML / EN)</button>
+      </div>
+      <div style="font-size:0.75rem;color:#64748b;margin:8px 0;">Manual Control</div>
+      <div class="dpad">
+        <div class="dpad-placeholder"></div>
+        <button class="dpad-btn" onclick="sendCmd('F')">▲</button>
+        <div class="dpad-placeholder"></div>
+        <button class="dpad-btn" onclick="sendCmd('L')">◀</button>
+        <button class="dpad-btn stop" onclick="sendCmd('S')">■</button>
+        <button class="dpad-btn" onclick="sendCmd('R')">▶</button>
+        <div class="dpad-placeholder"></div>
+        <button class="dpad-btn" onclick="sendCmd('B')">▼</button>
+        <div class="dpad-placeholder"></div>
+      </div>
+    </div>
+
+    <!-- Activity Log Card -->
+    <div class="card">
+      <div class="card-title">Activity Log</div>
+      <div class="activity-list" id="activityLog">
+        <div class="activity-item"><span class="activity-time">--:--</span><span class="activity-msg">Loading...</span></div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+</div><!-- /container -->
+
+<!-- Footer -->
+<div class="footer-info">
+  <span><div class="dot"></div> Battery: <span id="battery">--</span>%</span>
+  <span><div class="dot"></div> Network: <span id="network">--</span></span>
+  <span><div class="dot"></div> Raspberry Pi: Online</span>
+  <span><div class="dot"></div> Flask Server: Running</span>
+</div>
+
+<!-- Fall Alert Popup -->
+<div class="alert-popup" id="fallPopup">
+  <h4>⚠️ Fall Detected!</h4>
+  <p>A fall has been detected. The person may need immediate assistance.</p>
+  <div class="alert-popup-btns">
+    <button class="btn btn-danger" onclick="callCaregiver()">📞 Call Caregiver</button>
+    <button class="btn btn-secondary" onclick="dismissAlert()">Dismiss</button>
+  </div>
+</div>
+
+<script>
+  // ---- Clock ----
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ---- Poll API Status ----
+  let lastFallState = false;
+
+  async function pollStatus() {
+    try {
+      const resp = await fetch('/api/status');
+      const data = await resp.json();
+
+      // Health
+      const h = data.health || {};
+      const hrEl   = document.getElementById('hrValue');
+      const tmpEl  = document.getElementById('tempValue');
+      hrEl.textContent  = h.hr   || '--';
+      tmpEl.textContent = h.temp ? h.temp.toFixed(1) : '--';
+      hrEl.className    = 'vital-value' + (h.hr_alert   ? ' alert' : '');
+      tmpEl.className   = 'vital-value' + (h.temp_alert ? ' alert' : '');
+
+      // Fall
+      const f = data.fall || {};
+      const fallEl = document.getElementById('fallStatusText');
+      const popupEl = document.getElementById('fallPopup');
+      if (f.detected) {
+        fallEl.textContent  = 'FALL!';
+        fallEl.style.color  = '#ef4444';
+        if (!lastFallState) {
+          popupEl.classList.add('show');
+          lastFallState = true;
+        }
+      } else {
+        fallEl.textContent  = 'Normal';
+        fallEl.style.color  = '#10b981';
+        lastFallState = false;
+      }
+
+      // System
+      const sys = data.system || {};
+      document.getElementById('battery').textContent = sys.battery || '--';
+      document.getElementById('network').textContent = sys.network || '--';
+
+      // Timestamp
+      document.getElementById('timestamp').textContent = data.timestamp || '';
+
+      // Activity log
+      const acts = data.activity || [];
+      const logEl = document.getElementById('activityLog');
+      if (acts.length > 0) {
+        logEl.innerHTML = acts.map(a =>
+          `<div class="activity-item">
+             <span class="activity-time">${a.time}</span>
+             <span class="activity-msg">${a.message}</span>
+           </div>`
+        ).join('');
+      }
+
+    } catch (e) {
+      console.warn('Status poll failed:', e);
+    }
+  }
+
+  setInterval(pollStatus, 2000);
+  pollStatus();
+
+  // ---- Control Functions ----
+  async function sendCmd(cmd) {
+    await fetch('/api/manual_command', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({command: cmd})
+    });
+  }
+
+  async function startTracking() { await fetch('/api/start_tracking', {method:'POST'}); }
+  async function stopTracking()  { await fetch('/api/stop_tracking',  {method:'POST'}); }
+
+  async function simulateFall() {
+    await fetch('/api/simulate_fall', {method:'POST'});
+  }
+
+  function dismissAlert() {
+    document.getElementById('fallPopup').classList.remove('show');
+    fetch('/api/clear_fall', {method:'POST'});
+  }
+
+  function callCaregiver() {
+    alert('Caregiver has been notified via Telegram!');
+    dismissAlert();
+  }
+</script>
+</body>
+</html>
