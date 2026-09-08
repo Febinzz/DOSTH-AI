@@ -1254,11 +1254,11 @@ The project explores how **AI perception, embedded systems, robotics, natural in
 
 # Team
 
-| Member |
-|---|---|
-| **Abhishekh P** |
-| **Ranila CP** |
-| **Reeha Al Samar** |
+| Members |
+
+| **Abhishekh P**, |
+| **Ranila CP**, |
+| **Reeha Al Samar**, |
 | **Hiba Shamsudheen** |
 
 **Institution:** MES Kuttippuram  
