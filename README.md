@@ -1254,12 +1254,12 @@ The project explores how **AI perception, embedded systems, robotics, natural in
 
 # Team
 
-| Member | Responsibility |
+| Member |
 |---|---|
-| **Abhishekh P** | Vision & System Lead |
-| **Ranila CP** | Voice Assistant Developer |
-| **Reeha Al Samar** | Dashboard & UI Developer |
-| **Hiba Shamsudheen** | IoT & Documentation Lead |
+| **Abhishekh P** |
+| **Ranila CP** |
+| **Reeha Al Samar** |
+| **Hiba Shamsudheen** |
 
 **Institution:** MES Kuttippuram  
 **Project:** Group 15  
