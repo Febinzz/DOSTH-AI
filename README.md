@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CareMate — AI-Powered Elderly Care Companion Robot
 
 <p align="center">
@@ -1287,3 +1288,6 @@ The project makes use of open-source software, machine-learning frameworks, embe
   <strong>CAREMATE</strong><br>
   AI · Robotics · Computer Vision · Embedded Systems · Elderly Care
 </p>
+=======
+# DOSTH-AI
+>>>>>>> 65822523ef0d1c45507d319c5f0b8ed05dedc2c1
