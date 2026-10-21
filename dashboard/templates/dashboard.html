@@ -1,0 +1,879 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareMate | Live Companion Monitor</title>
+
+    <style>
+        :root {
+            --bg: #07111f;
+            --panel: #101e30;
+            --panel-light: #15263b;
+            --border: rgba(177, 205, 231, .13);
+            --text: #f0f7ff;
+            --muted: #9aacc1;
+            --teal: #45e0c0;
+            --blue: #78aaff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse at 10% 0%, #123451 0, transparent 42%),
+                radial-gradient(ellipse at 100% 100%, #12332f 0, transparent 35%),
+                var(--bg);
+        }
+
+        .shell {
+            width: min(1100px, 92%);
+            margin: auto;
+            padding: 30px 0 45px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .logo {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            color: #05241f;
+            font-size: 25px;
+            background: linear-gradient(135deg, var(--teal), #91f3d9);
+            box-shadow: 0 8px 28px #45e0c029;
+        }
+
+        h1, h2, p { margin-top: 0; }
+
+        .brand h1 {
+            font-size: 21px;
+            margin-bottom: 4px;
+            letter-spacing: -.5px;
+        }
+
+        .brand p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            border: 1px solid #45e0c038;
+            background: #45e0c010;
+            color: var(--teal);
+            border-radius: 30px;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .7px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--teal);
+            box-shadow: 0 0 12px var(--teal);
+            animation: pulse 1.7s infinite;
+        }
+
+        @keyframes pulse {
+            50% { opacity: .4; }
+        }
+
+        .intro {
+            padding: 38px 0 25px;
+        }
+
+        .eyebrow {
+            color: var(--teal);
+            font-size: 12px;
+            letter-spacing: 2px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .intro h2 {
+            font-size: clamp(28px, 4vw, 43px);
+            letter-spacing: -1.5px;
+            margin-bottom: 12px;
+        }
+
+        .intro p {
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 650px;
+            margin-bottom: 0;
+        }
+
+        .monitor {
+            border: 1px solid var(--border);
+            background: linear-gradient(145deg, #122238f5, #0d1929f5);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 25px 80px #00000030;
+        }
+
+        .monitor-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding: 22px 25px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .monitor-top h3 {
+            margin: 0 0 6px;
+            font-size: 17px;
+        }
+
+        .monitor-top p {
+            color: var(--muted);
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .current-label {
+            color: var(--blue);
+            background: #78aaff13;
+            border: 1px solid #78aaff2b;
+            border-radius: 9px;
+            padding: 8px 11px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+
+        .content {
+            padding: 26px;
+        }
+
+        .meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 23px;
+        }
+
+        .emotion {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #45e0c011;
+            border: 1px solid #45e0c02b;
+            color: var(--teal);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .time {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .message-card {
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            padding: 21px;
+            margin-top: 15px;
+            background: #ffffff04;
+        }
+
+        .message-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .message-icon {
+            display: grid;
+            place-items: center;
+            width: 39px;
+            height: 39px;
+            border-radius: 12px;
+            background: var(--panel-light);
+            font-size: 19px;
+        }
+
+        .message-heading h4 {
+            margin: 0 0 4px;
+            font-size: 14px;
+        }
+
+        .message-heading span {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .message-text {
+            margin: 0;
+            color: #e4edf7;
+            font-size: 15px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .reply {
+            border-color: #45e0c02b;
+            background: linear-gradient(120deg, #45e0c00a, #78aaff07);
+        }
+
+        .reply .message-icon {
+            background: #45e0c017;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 65px 20px;
+        }
+
+        .empty-icon {
+            font-size: 42px;
+            margin-bottom: 18px;
+        }
+
+        .empty h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .empty p {
+            color: var(--muted);
+            max-width: 420px;
+            margin: 0 auto;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            color: #8195ac;
+            font-size: 12px;
+            padding-top: 22px;
+        }
+
+        @media (max-width: 600px) {
+            .shell { width: 94%; padding-top: 18px; }
+            header { align-items: flex-start; }
+            .live-status { padding: 8px 10px; }
+            .brand h1 { font-size: 18px; }
+            .content { padding: 15px; }
+            .monitor-top { padding: 18px; }
+            .message-card { padding: 16px; }
+            .intro { padding-top: 30px; }
+        }
+
+        :root {
+            --bg: #f2f7f2;
+            --panel: #ffffff;
+            --panel-light: #e8f2eb;
+            --border: #d3e1d7;
+            --text: #17352b;
+            --muted: #4b6659;
+            --teal: #176b54;
+            --blue: #315c91;
+        }
+
+        body {
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            font-size: 18px;
+            color: var(--text);
+            background-color: var(--bg);
+            background-image: linear-gradient(rgba(23, 53, 43, .025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(23, 53, 43, .025) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        .shell { width: min(1160px, calc(100% - 48px)); padding-top: 22px; }
+        header { padding-bottom: 18px; border-color: var(--border); }
+        .brand { gap: 14px; }
+        .logo {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            color: #fff;
+            background: #176b54;
+            box-shadow: none;
+            font-size: 17px;
+            font-weight: 800;
+        }
+        .brand h1 { font-size: 23px; letter-spacing: 0; }
+        .brand p { color: var(--muted); font-size: 15px; }
+        .header-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .live-status {
+            min-height: 48px;
+            border: 1px solid #b9d5c4;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #185b46;
+            background: #e9f4ec;
+            font-size: 15px;
+            letter-spacing: 0;
+        }
+        .dot { width: 10px; height: 10px; background: #27835f; box-shadow: none; }
+        .demo-status .dot { background: #bd692f; }
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 48px;
+            padding: 10px 16px;
+            border: 2px solid #176b54;
+            border-radius: 8px;
+            color: #fff;
+            background: #176b54;
+            font: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .action-button:hover { background: #10533f; border-color: #10533f; }
+        .action-button:focus-visible { outline: 3px solid #d58b38; outline-offset: 3px; }
+
+        .intro { padding: 32px 0 23px; }
+        .eyebrow { color: #176b54; font-size: 14px; letter-spacing: 0; }
+        .intro h2 { max-width: 760px; font-size: 40px; line-height: 1.16; letter-spacing: 0; }
+        .intro h2 { color: #164f3e; }
+        .intro p { max-width: 760px; color: var(--muted); font-size: 19px; line-height: 1.6; }
+        .intro.hero {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(290px, .9fr);
+            align-items: center;
+            gap: 20px;
+            min-height: 320px;
+            margin: 28px 0 34px;
+            padding: 38px 46px;
+            overflow: hidden;
+            border: 1px solid #d8e9dc;
+            border-radius: 28px;
+            background: linear-gradient(115deg, #f6fbf4 0%, #edf7ef 55%, #e3f1e7 100%);
+            box-shadow: 0 18px 45px rgba(29, 79, 57, .08);
+        }
+        .hero-copy { position: relative; z-index: 1; }
+        .hero-copy .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 17px;
+            padding: 8px 12px;
+            border: 1px solid #c9dfce;
+            border-radius: 999px;
+            background: rgba(255,255,255,.72);
+            color: #22664d;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .hero-copy .eyebrow::before { content: "✿"; color: #d28c54; font-size: 16px; }
+        .hero-copy h2 {
+            max-width: 520px;
+            margin-bottom: 14px;
+            color: #173f32;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(38px, 4.2vw, 55px);
+            font-weight: 600;
+            letter-spacing: -1.7px;
+            line-height: 1.08;
+        }
+        .hero-copy p { max-width: 490px; margin-bottom: 20px; color: #536e60; font-size: 18px; line-height: 1.65; }
+        .hero-promise { display: inline-flex; align-items: center; gap: 9px; color: #22664d; font-size: 15px; font-weight: 700; }
+        .hero-promise span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #d9eddd; }
+        .caretaker-art {
+            position: relative;
+            display: grid;
+            place-items: center;
+            min-height: 245px;
+        }
+        .caretaker-art::before {
+            position: absolute;
+            width: min(100%, 330px);
+            aspect-ratio: 1;
+            border: 1px solid rgba(91, 148, 111, .17);
+            border-radius: 50%;
+            background: radial-gradient(circle at 55% 45%, #fff9e9 0 30%, #d8ebd8 70%);
+            content: "";
+        }
+        .caretaker-art svg { position: relative; z-index: 1; width: min(100%, 340px); height: auto; filter: drop-shadow(0 12px 10px rgba(30, 73, 52, .12)); }
+        .art-badge {
+            position: absolute;
+            z-index: 2;
+            right: 1%;
+            bottom: 8%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border: 1px solid #dce9dc;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 8px 20px rgba(29, 79, 57, .1);
+            color: #335d49;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .art-badge span { font-size: 19px; }
+        .monitor { overflow: visible; border: 0; border-top: 3px solid #176b54; border-radius: 0; background: transparent; box-shadow: none; }
+        .monitor-top { padding: 20px 0; border-color: var(--border); }
+        .monitor-top h3 { margin-bottom: 5px; font-size: 24px; }
+        .monitor-top p { color: var(--muted); font-size: 16px; }
+        .monitor-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .current-label {
+            border-color: #b9d5c4;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #315c91;
+            background: #eaf1f8;
+            font-size: 14px;
+            letter-spacing: 0;
+        }
+        .content { padding: 0 0 8px; }
+        .interaction-layout {
+            display: grid;
+            grid-template-columns: minmax(250px, .78fr) minmax(0, 1.5fr);
+            align-items: stretch;
+            gap: 18px;
+        }
+        .emotion-summary {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 18px;
+            min-height: 300px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(23, 53, 43, .06);
+        }
+        .emotion-readings {
+            display: grid;
+            width: 100%;
+            gap: 12px;
+        }
+        .emotion-reading {
+            --emotion-color: #176b54;
+            --emotion-wash: #e8f4ec;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid #dce9df;
+            border-radius: 14px;
+            background: var(--emotion-wash);
+        }
+        .emotion-reading[data-tone="happy"] { --emotion-color: #24713e; --emotion-wash: #e8f5e9; }
+        .emotion-reading[data-tone="calm"] { --emotion-color: #176b54; --emotion-wash: #e8f4ec; }
+        .emotion-reading[data-tone="neutral"] { --emotion-color: #315c91; --emotion-wash: #eaf1f8; }
+        .emotion-reading[data-tone="sad"], .emotion-reading[data-tone="fear"] { --emotion-color: #3d5e85; --emotion-wash: #edf2f8; }
+        .emotion-reading[data-tone="angry"], .emotion-reading[data-tone="disgust"] { --emotion-color: #98512c; --emotion-wash: #fbefe6; }
+        .emotion-reading[data-tone="surprise"] { --emotion-color: #8a6417; --emotion-wash: #faf3df; }
+        .emotion-face {
+            display: grid;
+            place-items: center;
+            flex: 0 0 62px;
+            width: 62px;
+            height: 62px;
+            border-radius: 14px;
+            color: var(--emotion-color);
+            background: #fff;
+            font-size: 38px;
+        }
+        .emotion-label { margin: 0 0 5px; color: var(--muted); font-size: 16px; font-weight: 700; }
+        .emotion-name { margin: 0; color: var(--emotion-color); font-size: 27px; line-height: 1.2; text-transform: capitalize; overflow-wrap: anywhere; }
+        .emotion-note { margin: auto 0 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+        .time { color: var(--muted); font-size: 15px; }
+        .messages { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .message-card {
+            margin: 0;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(23, 53, 43, .05);
+        }
+        .message-card.reply { border-color: #b9d5c4; border-radius: 16px; background: #edf6ef; }
+        .message-heading { align-items: flex-start; gap: 12px; margin-bottom: 17px; }
+        .message-icon { width: 46px; height: 46px; border-radius: 14px; background: #eaf1f8; font-size: 23px; }
+        .reply .message-icon { background: #dcefe1; }
+        .message-heading h4 { margin-bottom: 5px; font-size: 18px; }
+        .message-heading span { color: var(--muted); font-size: 14px; }
+        .message-text { color: #203b31; font-size: 18px; line-height: 1.65; }
+        .empty { border: 1px solid var(--border); border-radius: 22px; background: linear-gradient(140deg, #fff, #f4faf4); box-shadow: 0 12px 32px rgba(23, 53, 43, .06); }
+        .empty-icon { display: grid; place-items: center; width: 76px; height: 76px; margin: 0 auto 18px; border-radius: 24px; background: #e4f2e6; font-size: 42px; }
+        .empty h3 { font-size: 24px; }
+        .empty p { color: var(--muted); font-size: 17px; }
+        .footer { color: var(--muted); font-size: 15px; }
+
+        @media (max-width: 760px) {
+            .intro.hero { grid-template-columns: 1fr minmax(220px, .75fr); gap: 8px; padding: 30px; }
+            .hero-copy h2 { font-size: 42px; }
+            .caretaker-art { min-height: 220px; }
+            .interaction-layout { grid-template-columns: 1fr; }
+            .emotion-summary { min-height: 0; }
+            .emotion-note { margin-top: 0; }
+        }
+        @media (max-width: 560px) {
+            .shell { width: calc(100% - 32px); padding-top: 14px; }
+            header { align-items: flex-start; flex-direction: column; }
+            .header-tools { width: 100%; }
+            .live-status { flex: 1; }
+            .intro { padding-top: 25px; }
+            .intro h2 { font-size: 34px; }
+            .intro p { font-size: 18px; }
+            .intro.hero { grid-template-columns: 1fr; gap: 0; margin: 20px 0 28px; padding: 26px 22px 18px; border-radius: 22px; }
+            .hero-copy h2 { font-size: 39px; }
+            .hero-copy p { font-size: 17px; }
+            .caretaker-art { min-height: 220px; margin-top: 2px; }
+            .caretaker-art::before { width: 220px; }
+            .caretaker-art svg { width: 250px; }
+            .art-badge { right: 0; bottom: 2%; }
+            .monitor-top { align-items: flex-start; flex-direction: column; }
+            .monitor-actions { width: 100%; }
+            .current-label { flex: 1; text-align: center; }
+            .messages { grid-template-columns: 1fr; }
+            .emotion-summary { padding: 18px; }
+            .message-card { padding: 18px; }
+            .footer { flex-direction: column; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="shell">
+    <header>
+        <div class="brand">
+            <div class="logo" aria-hidden="true">CM</div>
+            <div>
+                <h1>CareMate</h1>
+                <p>Your intelligent elderly companion</p>
+            </div>
+        </div>
+
+        <div class="header-tools">
+            <div class="live-status{% if is_demo %} demo-status{% endif %}" id="live-status">
+                <span class="dot" aria-hidden="true"></span>
+                <span>{% if is_demo %}SAMPLE DEMO{% else %}LIVE MONITOR{% endif %}</span>
+            </div>
+            {% if is_demo %}
+            <button class="action-button" id="next-sample" type="button">Next sample</button>
+            {% else %}
+            <a class="action-button" href="{{ url_for('demo') }}">View demo</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="intro hero">
+        <div class="hero-copy">
+            <div class="eyebrow">CareMate · here for every moment</div>
+            <h2>A little more care, one check-in at a time.</h2>
+            <p>
+                A friendly space to follow each conversation, notice feelings, and help every day feel a little brighter.
+            </p>
+            <div class="hero-promise"><span aria-hidden="true">♥</span> Always here to listen</div>
+        </div>
+        <div class="caretaker-art" role="img" aria-label="Illustration of a friendly CareMate companion robot">
+            <svg viewBox="0 0 360 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <ellipse cx="180" cy="275" rx="112" ry="13" fill="#aacdb0" opacity=".65"/>
+                <circle cx="180" cy="144" r="112" fill="#d7ebd9"/>
+                <path d="M72 276c5-43 32-68 70-74h76c38 6 65 31 70 74v8H72z" fill="#4d8a6b"/>
+                <path d="M126 214c12-12 31-19 54-19s42 7 54 19l17 70H109z" fill="#f9f5e9"/>
+                <path d="M126 224l-38 28-13-17c-6-8-18-9-24-2-6 7-4 17 3 23l39 32c8 7 20 7 28 0l26-24M234 224l38 28 13-17c6-8 18-9 24-2 6 7 4 17-3 23l-39 32c-8 7-20 7-28 0l-26-24" fill="none" stroke="#d7e7d8" stroke-width="19" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M126 224l-38 28-13-17c-6-8-18-9-24-2-6 7-4 17 3 23l39 32c8 7 20 7 28 0l26-24M234 224l38 28 13-17c6-8 18-9 24-2 6 7 4 17-3 23l-39 32c-8 7-20 7-28 0l-26-24" fill="none" stroke="#8bb99a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M180 191v27" stroke="#d5a95e" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="180" cy="230" r="14" fill="#f0c96d"/>
+                <path d="M172 230c5-7 11-7 16 0-5 8-11 8-16 0z" fill="#fff8e4"/>
+                <path d="M180 93V73" stroke="#668e74" stroke-width="8" stroke-linecap="round"/>
+                <circle cx="180" cy="63" r="13" fill="#e8a978"/>
+                <path d="M115 128c0-31 23-56 53-56h24c30 0 53 25 53 56v41c0 31-23 56-53 56h-24c-30 0-53-25-53-56z" fill="#fffaf0" stroke="#57856a" stroke-width="8"/>
+                <path d="M129 129c0-22 17-41 39-41h24c22 0 39 19 39 41v34c0 22-17 41-39 41h-24c-22 0-39-19-39-41z" fill="#355f57"/>
+                <circle cx="157" cy="139" r="8" fill="#f7d477"/>
+                <circle cx="203" cy="139" r="8" fill="#f7d477"/>
+                <path d="M163 163c10 12 24 12 34 0" fill="none" stroke="#b4e1b9" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="108" cy="145" r="10" fill="#e8a978"/>
+                <circle cx="252" cy="145" r="10" fill="#e8a978"/>
+                <path d="M111 127v34M249 127v34" stroke="#57856a" stroke-width="6" stroke-linecap="round"/>
+                <path d="M93 90c-10-12-23-8-24 3-1 10 10 19 22 26 12-7 23-16 22-26-1-11-14-15-20-3z" fill="#e6a76f"/>
+                <path d="M269 85l4 9 10 2-7 7 2 10-9-5-9 5 2-10-7-7 10-2z" fill="#f0c96d"/>
+                <circle cx="279" cy="190" r="5" fill="#82ad88"/>
+                <circle cx="79" cy="188" r="4" fill="#e8a978"/>
+            </svg>
+            <div class="art-badge"><span aria-hidden="true">💚</span> Your caring robot companion</div>
+        </div>
+    </section>
+
+    <section class="monitor">
+        <div class="monitor-top">
+            <div>
+                <h3>Latest check-in</h3>
+                <p>Conversation and estimated expression</p>
+            </div>
+            <div class="monitor-actions">
+                <span class="current-label">{% if is_demo %}SIMULATED SAMPLES{% else %}UPDATES EVERY 2 SECONDS{% endif %}</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="interaction" aria-live="polite">
+                {% if interaction %}
+                <div class="interaction-layout" id="interaction-content">
+                    <section class="emotion-summary" aria-label="Latest emotion estimates">
+                        <div class="emotion-readings">
+                            <div class="emotion-reading" data-emotion="{{ interaction.emotion or 'Not detected' }}" data-reading="primary">
+                                <div class="emotion-face" id="emotion-face" aria-hidden="true">💬</div>
+                                <div>
+                                    <p class="emotion-label">Main feeling</p>
+                                    <h3 class="emotion-name" id="emotion" aria-live="polite">{{ interaction.emotion or "Not detected" }}</h3>
+                                </div>
+                            </div>
+                            <div class="emotion-reading" data-emotion="{{ interaction.second_emotion or 'Not detected' }}" data-reading="secondary">
+                                <div class="emotion-face" id="second-emotion-face" aria-hidden="true">💬</div>
+                                <div>
+                                    <p class="emotion-label">Another possible feeling</p>
+                                    <h3 class="emotion-name" id="second-emotion" aria-live="polite">{{ interaction.second_emotion or "Not detected" }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="emotion-note">This is an AI estimate, not a diagnosis. A kind check-in is always best.</p>
+                        <p class="time" id="time">{{ interaction.created_at }}</p>
+                    </section>
+
+                    <div class="messages">
+                        <article class="message-card">
+                            <div class="message-heading">
+                                <div class="message-icon" aria-hidden="true">🎙️</div>
+                                <div>
+                                    <h4>User said</h4>
+                                    <span>Latest conversation</span>
+                                </div>
+                            </div>
+                            <p class="message-text" id="user-text">{{ interaction.user_text }}</p>
+                        </article>
+
+                        <article class="message-card reply">
+                            <div class="message-heading">
+                                <div class="message-icon" aria-hidden="true">💚</div>
+                                <div>
+                                    <h4>CareMate replied</h4>
+                                    <span>Companion response</span>
+                                </div>
+                            </div>
+                            <p class="message-text" id="assistant-reply">{{ interaction.assistant_reply }}</p>
+                        </article>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty" id="empty-state">
+                    <div class="empty-icon" aria-hidden="true">🌿</div>
+                    <h3>Waiting for a check-in</h3>
+                    <p>
+                        When CareMate records a conversation, the latest words and both estimated feelings will appear here.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <span>CareMate · Elderly Companion Monitor</span>
+        <span id="connection" role="status" aria-live="polite">{% if is_demo %}Sample preview · no camera data{% else %}Connecting to live updates…{% endif %}</span>
+    </footer>
+</div>
+
+<script>
+    let latestId = {{ interaction.id if interaction else 0 }};
+    const isDemo = {{ 'true' if is_demo else 'false' }};
+    const emotionFaces = {
+        happy: "😊",
+        calm: "😌",
+        neutral: "😐",
+        sad: "😔",
+        angry: "😟",
+        fear: "😟",
+        surprise: "😮",
+        disgust: "😕",
+        excited: "😄"
+    };
+    const demoSamples = [
+        { emotion: "happy", second_emotion: "Calm", user_text: "I enjoyed the music this morning.", assistant_reply: "That sounds lovely. Would you like to hear another song?" },
+        { emotion: "neutral", second_emotion: "Calm", user_text: "What time is lunch?", assistant_reply: "Lunch is planned for 12:30. I can remind you when it is ready." },
+        { emotion: "sad", second_emotion: "Fear", user_text: "I am missing my family today.", assistant_reply: "I am here with you. Would you like me to help you call someone?" },
+        { emotion: "surprise", second_emotion: "Happy", user_text: "My friend is visiting today?", assistant_reply: "Yes, your visit is planned for this afternoon." }
+    ];
+
+    function applyEmotion(panel, face, emotion) {
+        const normalized = (emotion || "").trim().toLowerCase();
+        panel.dataset.tone = emotionFaces[normalized] ? normalized : "unknown";
+        face.textContent = emotionFaces[normalized] || "💬";
+    }
+
+    document.querySelectorAll(".emotion-reading").forEach(reading => {
+        applyEmotion(reading, reading.querySelector(".emotion-face"), reading.dataset.emotion);
+    });
+
+    function createEmotionReading(labelText, emotion, readingType) {
+        const reading = document.createElement("div");
+        reading.className = "emotion-reading";
+        reading.dataset.emotion = emotion || "Not detected";
+        reading.dataset.reading = readingType;
+
+        const face = document.createElement("div");
+        face.className = "emotion-face";
+        face.setAttribute("aria-hidden", "true");
+        const details = document.createElement("div");
+        const label = document.createElement("p");
+        label.className = "emotion-label";
+        label.textContent = labelText;
+        const name = document.createElement("h3");
+        name.className = "emotion-name";
+        name.id = readingType === "primary" ? "emotion" : "second-emotion";
+        name.setAttribute("aria-live", "polite");
+        name.textContent = emotion || "Not detected";
+        details.append(label, name);
+        reading.append(face, details);
+        applyEmotion(reading, face, emotion);
+        return reading;
+    }
+
+    function renderInteraction(item) {
+        const container = document.getElementById("interaction");
+        const layout = document.createElement("div");
+        layout.className = "interaction-layout";
+
+        const panel = document.createElement("section");
+        panel.className = "emotion-summary";
+        panel.setAttribute("aria-label", "Latest emotion estimates");
+        const readings = document.createElement("div");
+        readings.className = "emotion-readings";
+        readings.append(
+            createEmotionReading("Main feeling", item.emotion, "primary"),
+            createEmotionReading("Another possible feeling", item.second_emotion, "secondary")
+        );
+        const note = document.createElement("p");
+        note.className = "emotion-note";
+        note.textContent = "This is an AI estimate, not a diagnosis. A kind check-in is always best.";
+        const time = document.createElement("p");
+        time.className = "time";
+        time.id = "time";
+        time.textContent = item.created_at || "Just now";
+        panel.append(readings, note, time);
+
+        const messages = document.createElement("div");
+        messages.className = "messages";
+
+        function addMessage(icon, title, subtitle, text, isReply) {
+            const card = document.createElement("article");
+            card.className = isReply ? "message-card reply" : "message-card";
+            const heading = document.createElement("div");
+            heading.className = "message-heading";
+            const badge = document.createElement("div");
+            badge.className = "message-icon";
+            badge.setAttribute("aria-hidden", "true");
+            badge.textContent = icon;
+            const labels = document.createElement("div");
+            const titleElement = document.createElement("h4");
+            titleElement.textContent = title;
+            const subtitleElement = document.createElement("span");
+            subtitleElement.textContent = subtitle;
+            labels.append(titleElement, subtitleElement);
+            heading.append(badge, labels);
+            const textElement = document.createElement("p");
+            textElement.className = "message-text";
+            textElement.textContent = text || "";
+            card.append(heading, textElement);
+            messages.appendChild(card);
+        }
+
+        addMessage("🎙️", "User said", "Latest conversation", item.user_text, false);
+        addMessage("💚", "CareMate replied", "Companion response", item.assistant_reply, true);
+        layout.append(panel, messages);
+        container.replaceChildren(layout);
+    }
+
+    function nextDemoSample() {
+        const sample = demoSamples.shift();
+        demoSamples.push(sample);
+        latestId += 1;
+        renderInteraction({ ...sample, id: latestId, created_at: "Sample interaction · Demo data" });
+    }
+
+    async function refreshInteraction() {
+        const connection = document.getElementById("connection");
+
+        if (isDemo) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/latest-interaction", {
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+
+            const data = await response.json();
+            connection.textContent = "Live updates active · checks every 2 seconds";
+
+            const item = data.interaction;
+            if (!item || Number(item.id) === latestId) {
+                return;
+            }
+
+            latestId = Number(item.id);
+            renderInteraction(item);
+        } catch (error) {
+            connection.textContent = "Reconnecting to live updates…";
+        }
+    }
+
+    const nextSampleButton = document.getElementById("next-sample");
+    if (nextSampleButton) {
+        nextSampleButton.addEventListener("click", nextDemoSample);
+        setInterval(nextDemoSample, 8000);
+    }
+
+    refreshInteraction();
+    setInterval(refreshInteraction, 2000);
+</script>
+</body>
+</html>
