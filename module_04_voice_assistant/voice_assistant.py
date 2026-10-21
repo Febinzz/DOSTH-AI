@@ -65,7 +65,17 @@ Keep responses short (under 3 sentences).
 When speaking Malayalam, use proper Malayalam script.
 You help with: medication reminders, health questions, weather, general conversation.
 If someone asks about an emergency, tell them help is being alerted.
-Always be gentle, patient, and reassuring."""
+Always be gentle, patient, and reassuring.
+When a detected facial emotion is provided, actively use it to shape the empathy,
+tone, and emotional support in your reply; do not treat it as an optional detail.
+Respond to the user's words and request while also addressing the emotional need
+suggested by the detected emotion. Acknowledge the feeling naturally when helpful,
+without claiming the estimate is certain or making a diagnosis. The user's words
+remain the source for facts and what they are asking for."""
+
+MAX_PREVIOUS_MESSAGES = 5
+FACE_DETECTION_RECENCY_SECONDS = 8
+FACE_LOST_RESET_SECONDS = 12
 
 LOCAL_COMMANDS = {
     "status": "All systems are functioning normally.",
@@ -95,12 +105,20 @@ class VoiceAssistant:
         self.recognizer    = sr.Recognizer()
         self.groq_client   = None
         self.conversation  = []   # Multi-turn conversation history
+        # Facial emotion detection — initialized only when needed
+        self._emotion_pipeline = None
+        self.last_detected_emotion = None
+        self.last_detected_second_emotion = None
+        self._face_detected_since = None
+        self._last_face_seen_at = None
+        self._last_communication_at = time.monotonic()
+        self._checkin_prompted = False
 
-        # Init pygame for audio playback
-        try:
-            pygame.mixer.init()
-        except Exception as e:
-            log.warning(f"pygame mixer init failed: {e}. Will use mpg321 fallback.")
+        if os.name != "nt":
+            try:
+                pygame.mixer.init()
+            except Exception as e:
+                log.warning(f"pygame mixer init failed: {e}. Will use mpg321 fallback.")
 
         # Init Groq
         if GROQ_AVAILABLE and config.GROQ_API_KEY != "YOUR_GROQ_API_KEY_HERE":
@@ -122,6 +140,38 @@ class VoiceAssistant:
         log.info("Voice assistant started. Say something!")
 
         self._loop()
+    
+    def _log_to_dashboard(
+        self, user_text, emotion, assistant_reply, second_emotion=None
+    ):
+        """Send a completed CareMate interaction to Flask."""
+        token = os.environ.get("CAREMATE_DASHBOARD_TOKEN")
+
+        if not token:
+            log.warning("Dashboard token is not configured.")
+            return
+
+        try:
+            response = requests.post(
+                "http://127.0.0.1:5000/api/log-interaction",
+                headers={"X-CareMate-Token": token},
+                json={
+                    "emotion": emotion,
+                    "second_emotion": second_emotion,
+                    "user_text": user_text,
+                    "assistant_reply": assistant_reply,
+                },
+                timeout=2,
+            )
+
+            if response.status_code != 201:
+                log.warning(
+                    "Dashboard logging failed: HTTP %s",
+                    response.status_code,
+                )
+
+        except requests.RequestException as e:
+            log.warning("Could not reach dashboard: %s", e)
 
     # ----------------------------------------------------------
     def _loop(self):
@@ -130,59 +180,313 @@ class VoiceAssistant:
             while self.running:
                 text = self._listen()
                 if text:
+                    self._last_communication_at = time.monotonic()
+                    self._checkin_prompted = False
                     log.info(f"You said: {text}")
-                    response = self._process(text)
+                    response = self._process(
+                        text,
+                        emotion=self.last_detected_emotion,
+                        second_emotion=self.last_detected_second_emotion,
+                    )
                     if response == "__STOP__":
                         self.speak("Stopping voice assistant. Take care.")
                         break
                     elif response == "__CALL__":
                         self._emergency_call()
+                        self._last_communication_at = time.monotonic()
                     elif response:
+                        self._log_to_dashboard(
+                            user_text=text,
+                            emotion=self.last_detected_emotion,
+                            assistant_reply=response,
+                            second_emotion=self.last_detected_second_emotion,
+                        )
                         self.speak(response)
+                        self._last_communication_at = time.monotonic()
+                elif self._should_offer_checkin():
+                    self._checkin_prompted = True
+                    log.info("No speech for 15 seconds while a face is present; asking in Malayalam.")
+                    self.speak("നിങ്ങൾ ഇവിടെ ഉണ്ടോ? നിങ്ങൾക്ക് സുഖമാണോ?", lang="ml")
         except KeyboardInterrupt:
             log.info("Interrupted.")
         finally:
             log.info("Voice assistant stopped.")
+    def _get_emotion_pipeline(self):
+        """Load the existing FER model once; never train or download weights."""
+        if self._emotion_pipeline is not None:
+            return self._emotion_pipeline
 
+        try:
+            import cv2  # Ensure OpenCV is installed
+
+            face_root = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "face_emotion_module")
+            )
+
+            model_path = os.path.join(
+                face_root, "models", "fer", "emotion_model.onnx"
+            )
+
+            if not os.path.isfile(model_path):
+                log.warning("FER model not found: %s", model_path)
+                return None
+
+            # Match the import structure used by run_fer_webcam.py.
+            if face_root not in sys.path:
+                sys.path.insert(0, face_root)
+
+            from modules.fer.pipeline import FacialEmotionPipeline
+
+            self._emotion_pipeline = FacialEmotionPipeline(
+                model_path=model_path
+            )
+            log.info("Existing facial emotion model loaded.")
+            return self._emotion_pipeline
+
+        except Exception as e:
+            log.warning("Facial emotion detection unavailable: %s", e)
+            return None
+
+    def _emotion_camera_worker(
+        self, pipeline, stop_event, emotions, lock, face_presence
+    ):
+        """
+        Sample facial expressions during microphone recording only.
+        This worker owns and releases its camera.
+        """
+        cap = None
+
+        try:
+            import cv2
+
+            cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+            if not cap.isOpened():
+                cap.release()
+                cap = cv2.VideoCapture(0)
+
+            if not cap.isOpened():
+                log.warning("Could not open webcam; continuing without emotion.")
+                return
+
+            while not stop_event.is_set():
+                ok, frame = cap.read()
+
+                if not ok:
+                    time.sleep(0.03)
+                    continue
+
+                try:
+                    result = pipeline.process_frame(
+                        frame, enable_enhancement=True
+                    )
+
+                    if result.get("face_detected", False):
+                        with lock:
+                            face_presence["last_seen_at"] = time.monotonic()
+
+                    # Ignore missing faces and frames during calibration.
+                    if not result.get("face_detected", False):
+                        continue
+
+                    if not result.get("baseline_calibrated", False):
+                        continue
+
+                    if not result.get("is_confident", False):
+                        continue
+
+                    emotion = result.get("primary_emotion")
+
+                    if not isinstance(emotion, str):
+                        continue
+
+                    emotion = emotion.strip().lower()
+
+                    if not emotion or emotion in {
+                        "unclear",
+                        "expression unclear",
+                        "calibrating",
+                    }:
+                        continue
+
+                    with lock:
+                        emotions.append(emotion)
+
+                except Exception as e:
+                    log.debug("Skipping invalid FER frame: %s", e)
+
+        except Exception as e:
+            log.warning("Webcam sampling failed: %s", e)
+
+        finally:
+            if cap is not None:
+                cap.release()
     # ----------------------------------------------------------
     def _listen(self):
         """
-        Listen via microphone and return recognized text.
-        Tries Malayalam first, then English.
-        Returns None on failure.
+        Record speech and sample facial expressions during that recording.
+        Release the camera before speech recognition begins.
         """
-        with sr.Microphone() as source:
-            log.info("Listening...")
-            try:
-                audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=8)
-            except sr.WaitTimeoutError:
-                return None
+        self.last_detected_emotion = None
+        self.last_detected_second_emotion = None
 
-        # Try Malayalam
+        pipeline = self._get_emotion_pipeline()
+
+        stop_event = threading.Event()
+        emotions = []
+        face_presence = {"last_seen_at": None}
+        lock = threading.Lock()
+        camera_thread = None
+        audio = None
+
+        if pipeline is not None:
+            try:
+                camera_thread = threading.Thread(
+                    target=self._emotion_camera_worker,
+                    args=(pipeline, stop_event, emotions, lock, face_presence),
+                    daemon=True,
+                )
+                camera_thread.start()
+
+            except Exception as e:
+                log.warning("Could not start emotion sampling: %s", e)
+
         try:
-            text = self.recognizer.recognize_google(audio, language="ml-IN")
-            log.info(f"Recognized (Malayalam): {text}")
-            return text
-        except sr.UnknownValueError:
-            pass
-        except sr.RequestError as e:
-            log.error(f"Google Speech API error: {e}")
+            with sr.Microphone() as source:
+                log.info("Listening...")
+                audio = self.recognizer.listen(
+                    source,
+                    timeout=5,
+                    phrase_time_limit=8,
+                )
+
+        except sr.WaitTimeoutError:
+            log.info("No speech detected.")
             return None
 
-        # Fall back to English
+        except Exception as e:
+            log.error("Microphone recording failed: %s", e)
+            return None
+
+        finally:
+            # Stop and join the worker before recognition or speaking.
+            stop_event.set()
+
+            if camera_thread is not None:
+                camera_thread.join()
+
+            with lock:
+                recorded_emotions = list(emotions)
+                last_face_seen_at = face_presence["last_seen_at"]
+
+            self._update_face_presence(last_face_seen_at)
+
+            
+            if recorded_emotions:
+                counts = {}
+
+                for emotion in recorded_emotions:
+                    emotion = emotion.strip().lower()
+                    counts[emotion] = counts.get(emotion, 0) + 1
+
+                ranked_emotions = sorted(
+                    counts.items(), key=lambda item: item[1], reverse=True
+                )
+                dominant = ranked_emotions[0][0]
+                second_emotion = (
+                    ranked_emotions[1][0] if len(ranked_emotions) > 1 else None
+                )
+                self.last_detected_emotion = dominant
+                self.last_detected_second_emotion = second_emotion
+
+                log.info(
+                    "Emotions sent for response: %s, %s (%d frames; samples=%s)",
+                    dominant,
+                    second_emotion or "none",
+                    len(recorded_emotions),
+                    counts,
+                )
+            else:
+                self.last_detected_emotion = None
+                self.last_detected_second_emotion = None
+                log.info("No reliable facial expression detected.")
+
+        if audio is None:
+            return None
+
+        # The webcam has already been released before this point.
         try:
-            text = self.recognizer.recognize_google(audio, language="en-IN")
-            log.info(f"Recognized (English): {text}")
+            text = self.recognizer.recognize_google(
+                audio, language="ml-IN"
+            )
+            log.info("Recognized (Malayalam): %s", text)
             return text
+
+        except sr.UnknownValueError:
+            pass
+
+        except sr.RequestError as e:
+            log.error("Google Speech API error: %s", e)
+            return None
+
+        try:
+            text = self.recognizer.recognize_google(
+                audio, language="en-IN"
+            )
+            log.info("Recognized (English): %s", text)
+            return text
+
         except sr.UnknownValueError:
             log.info("Speech not understood.")
             return None
+
         except sr.RequestError as e:
-            log.error(f"Google Speech API error: {e}")
+            log.error("Google Speech API error: %s", e)
             return None
 
+    def _update_face_presence(self, last_face_seen_at, now=None):
+        """Track a recently visible face and restart timing after a long gap."""
+        now = time.monotonic() if now is None else now
+        face_is_recent = (
+            last_face_seen_at is not None
+            and now - last_face_seen_at <= FACE_DETECTION_RECENCY_SECONDS
+        )
+
+        if face_is_recent:
+            if (
+                self._last_face_seen_at is None
+                or now - self._last_face_seen_at > FACE_LOST_RESET_SECONDS
+            ):
+                self._face_detected_since = last_face_seen_at
+                self._checkin_prompted = False
+            self._last_face_seen_at = now
+        elif (
+            self._last_face_seen_at is not None
+            and now - self._last_face_seen_at > FACE_LOST_RESET_SECONDS
+        ):
+            self._face_detected_since = None
+            self._last_face_seen_at = None
+            self._checkin_prompted = False
+
+    def _should_offer_checkin(self, now=None):
+        """Offer one Malayalam check-in after 15 seconds of face-visible silence."""
+        now = time.monotonic() if now is None else now
+        if (
+            self._face_detected_since is None
+            or self._last_face_seen_at is None
+            or self._checkin_prompted
+            or now - self._last_face_seen_at > FACE_LOST_RESET_SECONDS
+        ):
+            return False
+
+        silence_started_at = max(
+            self._face_detected_since,
+            self._last_communication_at,
+        )
+        return now - silence_started_at >= 15
+
     # ----------------------------------------------------------
-    def _process(self, text):
+    def _process(self, text, emotion=None, second_emotion=None):
         """
         Determine response to user's text.
         1. Check local commands first (no network needed).
@@ -205,28 +509,59 @@ class VoiceAssistant:
 
         # LLM response
         if self.groq_client:
-            return self._llm_response(text)
+            return self._llm_response(
+                text, emotion=emotion, second_emotion=second_emotion
+            )
 
         # Simple fallback
         return self._fallback_response(text_lower)
 
     # ----------------------------------------------------------
-    def _llm_response(self, user_text):
+    def _llm_response(self, user_text, emotion=None, second_emotion=None):
         """Get response from Groq LLM."""
-        self.conversation.append({"role": "user", "content": user_text})
-        # Keep conversation to last 10 turns
-        if len(self.conversation) > 20:
-            self.conversation = self.conversation[-20:]
+        if emotion:
+            detected_emotions = f"Primary detected facial emotion: {emotion}."
+            if second_emotion:
+                detected_emotions += (
+                    f" Secondary detected facial emotion: {second_emotion}."
+                )
+            message_content = (
+                f"The user said: {user_text}\n"
+                f"{detected_emotions}\n"
+                "Use the detected emotion estimates to shape your response: "
+                "include suitable empathy or emotional support and adapt your "
+                "tone to them. Consider both when available, without assuming "
+                "either is certain. Do not ignore them. Respond "
+                "to the user's actual words and request; do not assume the "
+                "emotions are certain or present them as a diagnosis."
+            )
+        else:
+            message_content = user_text
+        current_message = {
+            "role": "user",
+            "content": message_content,
+        }
+        recent_history = self.conversation[-MAX_PREVIOUS_MESSAGES:]
 
         try:
             resp = self.groq_client.chat.completions.create(
                 model=config.GROQ_MODEL,
-                messages=[{"role": "system", "content": SYSTEM_PROMPT}] + self.conversation,
-                max_tokens=150,
+                messages=(
+                    [{"role": "system", "content": SYSTEM_PROMPT}]
+                    + recent_history
+                    + [current_message]
+                ),
+                max_tokens=512,
                 temperature=0.7,
             )
             reply = resp.choices[0].message.content.strip()
-            self.conversation.append({"role": "assistant", "content": reply})
+            self.conversation.extend([
+                current_message,
+                {"role": "assistant", "content": reply},
+            ])
+            self.conversation = self.conversation[
+                -(MAX_PREVIOUS_MESSAGES + 2):
+            ]
             return reply
         except Exception as e:
             log.error(f"Groq API error: {e}")
@@ -287,31 +622,88 @@ class VoiceAssistant:
 
         log.info(f"CareMate: {text}")
 
+        tmp_path = None
         try:
             tts = gTTS(text=text, lang=lang, slow=False)
-            tmp_path = config.AUDIO_OUTPUT_FILE
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as audio_file:
+                tmp_path = audio_file.name
             tts.save(tmp_path)
             self._play_audio(tmp_path)
         except Exception as e:
-            log.error(f"gTTS error: {e}. Falling back to espeak.")
+            log.error("Speech output failed: %s. Falling back to espeak.", e)
             self._espeak(text)
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError as e:
+                    log.warning("Could not remove temporary speech audio: %s", e)
 
     # ----------------------------------------------------------
+    
     def _play_audio(self, path):
-        """Play audio file using pygame."""
-        try:
-            pygame.mixer.music.load(path)
-            pygame.mixer.music.play()
-            while pygame.mixer.music.get_busy():
-                time.sleep(0.1)
-        except Exception:
-            # Fallback: mpg321
+        """Play speech to completion before opening the microphone again."""
+        if os.name == "nt":
+            import ctypes
+
+            winmm = ctypes.windll.winmm
+            alias = "caremate_audio"
+            opened = False
+
+            def send_mci_command(command):
+                error_code = winmm.mciSendStringW(command, None, 0, 0)
+                if error_code:
+                    error_message = ctypes.create_unicode_buffer(256)
+                    winmm.mciGetErrorStringW(
+                        error_code, error_message, len(error_message)
+                    )
+                    raise OSError(
+                        error_message.value or f"MCI error {error_code}"
+                    )
+
             try:
-                subprocess.run(["mpg321", "-q", path],
-                               check=True, timeout=15,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                audio_path = os.path.abspath(path).replace('"', '\\"')
+                send_mci_command(
+                    f'open "{audio_path}" type mpegvideo alias {alias}'
+                )
+                opened = True
+                send_mci_command(f"play {alias} wait")
             except Exception as e:
-                log.error(f"Audio playback failed: {e}")
+                log.error("Windows audio playback failed: %s", e)
+                raise RuntimeError(f"Audio playback failed: {e}") from e
+            finally:
+                if opened:
+                    try:
+                        send_mci_command(f"close {alias}")
+                    except OSError as cleanup_error:
+                        log.warning(
+                            "Could not close Windows audio playback: %s",
+                            cleanup_error,
+                        )
+        else:
+            try:
+                if not pygame.mixer.get_init():
+                    pygame.mixer.init()
+
+                pygame.mixer.music.load(path)
+                pygame.mixer.music.set_volume(1.0)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    time.sleep(0.1)
+            except Exception as e:
+                log.error("Audio playback failed: %s", e)
+                raise RuntimeError(f"Audio playback failed: {e}") from e
+            finally:
+                try:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.unload()
+                except Exception as cleanup_error:
+                    log.warning(
+                        "Could not release playback audio: %s", cleanup_error
+                    )
+
+        # Let the last audio buffer and any room echo fade before listening.
+        time.sleep(0.35)
 
     # ----------------------------------------------------------
     @staticmethod
